@@ -1,4 +1,3 @@
-
 import io
 import json
 import urllib.parse
@@ -22,8 +21,8 @@ from sklearn.ensemble import RandomForestClassifier
 # ==========================================
 translations = {
     "ru": {
-        "page_title": "AI-Помощник Учителя",
-        "sidebar_title": "🎓 EduAI Platform",
+        "page_title": "Bilim AI — Помощник Учителя",
+        "sidebar_title": "🎓 Bilim AI Platform",
         "api_subheader": "🔑 Доступ к ИИ",
         "api_help": "Введите ключ один раз для всех инструментов",
         "api_expander": "ℹ️ Как получить API ключ бесплатно?",
@@ -127,8 +126,8 @@ translations = {
         "warm_wait": "Генерация интерактивных заданий...",
     },
     "kk": {
-        "page_title": "AI Мұғалім Көмекшісі",
-        "sidebar_title": "🎓 EduAI Platform",
+        "page_title": "Bilim AI — Мұғалім Көмекшісі",
+        "sidebar_title": "🎓 Bilim AI Platform",
         "api_subheader": "🔑 ЖИ қолжетімділік кілті",
         "api_help": "Барлық құралдар үшін кілтті бір рет енгізіңіз",
         "api_expander": "ℹ️ API кілтін қалай алуға болады?",
@@ -236,7 +235,7 @@ translations = {
 # ==========================================
 # 1. СОВРЕМЕННЫЙ ДИЗАЙН (UI / CSS)
 # ==========================================
-st.set_page_config(page_title="AI-Помощник Учителя", page_icon="🎓", layout="wide")
+st.set_page_config(page_title="Bilim AI", page_icon="🎓", layout="wide")
 
 st.markdown("""
 <style>
@@ -260,7 +259,6 @@ st.markdown("""
         margin-bottom: 2rem;
     }
     
-    /* Стили боковой панели */
     [data-testid="stSidebar"] {
         background-color: #0f172a;
         color: #ffffff;
@@ -274,7 +272,7 @@ st.markdown("""
         color: #e2e8f0 !important;
     }
     
-    /* ИСПРАВЛЕНИЕ: Делаем текст радиокнопок в сайдбаре четким и белым */
+    /* Четкий белый цвет текста пунктов меню в сайдбаре */
     [data-testid="stSidebar"] .stRadio label p {
         color: #f8fafc !important;
         font-weight: 500;
@@ -363,7 +361,6 @@ st.sidebar.caption(t["footer"])
 # МОДУЛЬ 1: ГЕНЕРАТОР КАРТОЧЕК
 # ==========================================
 if menu_choice in ["📝 Генератор карточек", "📝 Тапсырма карточкаларын жасау"]:
-    # ИСПРАВЛЕНИЕ: Убрали эмодзи из st.title, чтобы она не дублировалась
     st.title(menu_choice)
     st.markdown(f"#### {'Автоматическая генерация индивидуальных вариантов в Word' if lang=='ru' else 'Word форматында жеке нұсқаларды автоматты түрде жасау'}")
     st.divider()
@@ -727,7 +724,7 @@ elif menu_choice in ["⚡ Разминки и интерактивы", "⚡ Се
 # ==========================================
 # 📊 GOOGLE ANALYTICS СЧЕТЧИК
 # ==========================================
-GA_TRACKING_ID = "G-0EW4TYEDKE" 
+GA_TRACKING_ID = "G-XXXXXXXXXX" 
 ga_component = f"""
 <!DOCTYPE html>
 <html>
