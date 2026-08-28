@@ -268,7 +268,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ⚠️ ВАШ ДЕФОЛТНЫЙ КЛЮЧ (ВСТАВИТЬ СЮДА) ⚠️
-DEFAULT_API_KEY = ""
+DEFAULT_API_KEY = "AQ.Ab8RN6JTeN0w24wGgXPHwpCEeLns54rrzXCLvZLZg_fJMU9Aqw"
 
 # ==========================================
 # 2. БОКОВОЕ МЕНЮ И УПРАВЛЕНИЕ КЛЮЧАМИ
