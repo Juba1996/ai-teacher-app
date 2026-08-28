@@ -6,8 +6,6 @@ from docx import Document
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.enum.section import WD_ORIENT
 from docx.shared import Inches, Pt
-from docx.oxml.ns import qn
-from docx.oxml import OxmlElement
 import google.generativeai as genai
 from PIL import Image
 import pandas as pd
@@ -46,9 +44,10 @@ translations = {
         
         "source": "Источник данных:",
         "source_options": ["Google Таблица", "Excel-файл", "Сгенерировать через ИИ ✨"],
-        "template_info": "💡 **Шаблон таблицы:** Ваша таблица должна содержать колонки: `Вопрос`, `Ответ`, `Сложность` (Легкий/Средний/Сложный). На листе учеников: `ФИО`.",
+        "template_info": "💡 **Шаблон таблицы:** Ваш файл должен содержать два листа: `Банк_вопросов` (колонки: Вопрос, Ответ, Сложность) и `Ученики` (колонка: ФИО). Вы можете скачать готовый шаблон ниже:",
+        "download_template": "📥 Скачать шаблон Excel-файла",
         "sheet_link": "Ссылка на Google Таблицу:",
-        "upload_excel": "Загрузите Excel-файл (листы: Банк_вопросов, Ученики):",
+        "upload_excel": "Загрузите заполненный Excel-файл:",
         "success_excel": "Данные успешно прочитаны!",
         "ai_topic_lbl": "Тема для генерации вопросов:",
         "ai_students_lbl": "Список учеников (через запятую или с новой строки):",
@@ -155,9 +154,10 @@ translations = {
         
         "source": "Дереккөз:",
         "source_options": ["Google Кесте", "Excel-файл", "ЖИ арқылы генерациялау ✨"],
-        "template_info": "💡 **Кесте шаблоны:** Сіздің кестеңізде мына бағандар болуы керек: `Сұрақ`, `Жауап`, `Қиындығы` (Жеңіл/Орташа/Қиын). Оқушылар парағында: `Аты-жөні`.",
+        "template_info": "💡 **Кесте шаблоны:** Сіздің файлыңызда екі парақ болуы тиіс: `Банк_вопросов` (бағандар: Вопрос, Ответ, Сложность) және `Ученики` (баған: ФИО). Дайын шаблонды төменден жүктей аласыз:",
+        "download_template": "📥 Excel шаблон файлын жүктеу",
         "sheet_link": "Google кестенің сілтемесі:",
-        "upload_excel": "Excel файлын жүктеңіз (Банк_вопросов, Ученики):",
+        "upload_excel": "Толтырылған Excel файлын жүктеңіз:",
         "success_excel": "Деректер сәтті оқылды!",
         "ai_topic_lbl": "Сұрақтар құруға арналған тақырып:",
         "ai_students_lbl": "Оқушылар тізімі (үтір арқылы немесе жаңа жолдан):",
@@ -243,10 +243,9 @@ translations = {
 }
 
 # ==========================================
-# 1. СОВРЕМЕННЫЙ ДИЗАЙН (UI / CSS)
+# 1. ДИЗАЙН И СТИЛИ
 # ==========================================
 st.set_page_config(page_title="Bilim AI", page_icon="🎓", layout="wide")
-
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
@@ -266,33 +265,25 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# ⚠️ ВАШ ДЕФОЛТНЫЙ КЛЮЧ (ВСТАВИТЬ СЮДА) ⚠️
+# ⚠️ ДЕФОЛТНЫЙ КЛЮЧ (можно оставить пустым или вписать ваш) ⚠️
 DEFAULT_API_KEY = "AQ.Ab8RN6JTeN0w24wGgXPHwpCEeLns54rrzXCLvZLZg_fJMU9Aqw"
 
 # ==========================================
 # 2. БОКОВОЕ МЕНЮ И УПРАВЛЕНИЕ КЛЮЧАМИ
 # ==========================================
 st.sidebar.image("https://cdn-icons-png.flaticon.com/512/1972/1972413.png", width=60)
-
 lang_choice = st.sidebar.selectbox("🌐 Тіл / Язык интерфейса:", ["Русский", "Қазақша"], index=0)
 lang = "ru" if lang_choice == "Русский" else "kk"
 t = translations[lang]
 
 st.sidebar.markdown(f"### {t['sidebar_title']}")
 st.sidebar.markdown("---")
-
 st.sidebar.subheader(t["api_subheader"])
 user_api_key = st.sidebar.text_input("Gemini API Key:", type="password", help=t["api_help"])
 
 with st.sidebar.expander(t["api_expander"]):
-    st.markdown("""
-    1. Зайдите на [Google AI Studio](https://aistudio.google.com/app/apikey).
-    2. Войдите через Google-аккаунт.
-    3. Нажмите кнопку **Create API key**.
-    4. Скопируйте и вставьте ключ выше.
-    """)
+    st.markdown("1. Зайдите на [Google AI Studio](https://aistudio.google.com/app/apikey).\n2. Нажмите **Create API key**.\n3. Вставьте ключ выше.")
 
-# Логика подхвата ключа и предупреждения
 active_key = user_api_key.strip()
 if not active_key:
     if DEFAULT_API_KEY:
@@ -301,13 +292,12 @@ if not active_key:
 
 st.sidebar.markdown("---")
 st.sidebar.subheader(t["tools_subheader"])
-
 menu_choice = st.sidebar.radio("Navigation:", t["menu"], label_visibility="collapsed")
 st.sidebar.markdown("---")
 st.sidebar.caption(t["footer"])
 
 # ==========================================
-# ВСПОМОГАТЕЛЬНАЯ ФУНКЦИЯ ОЧИСТКИ JSON ОТ ИИ
+# ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
 # ==========================================
 def clean_json_response(text):
     text = text.strip()
@@ -316,12 +306,46 @@ def clean_json_response(text):
         return json.loads(match.group(0))
     return json.loads(text)
 
+def generate_excel_template():
+    """Создает шаблон Excel файла для скачивания"""
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df_questions = pd.DataFrame({
+            "Вопрос": [
+                "Что такое алгоритм?", 
+                "Какой язык программирования используется для ИИ?", 
+                "Что такое оперативная память?"
+            ],
+            "Ответ": [
+                "Пошаговая инструкция для решения задачи", 
+                "Python", 
+                "Энергозависимая память для хранения текущих данных"
+            ],
+            "Сложность": ["Легкий", "Средний", "Сложный"]
+        })
+        df_students = pd.DataFrame({
+            "ФИО": ["Иванов Иван", "Петров Петр", "Смирнова Анна"]
+        })
+        df_questions.to_excel(writer, sheet_name='Банк_вопросов', index=False)
+        df_students.to_excel(writer, sheet_name='Ученики', index=False)
+    output.seek(0)
+    return output.getvalue()
+
 # ==========================================
-# МОДУЛЬ 1: ГЕНЕРАТОР КАРТОЧЕК
+# МОДУЛЬ 1: ГЕНЕРАТОР КАРТОЧЕК + ШАБЛОН
 # ==========================================
 if menu_choice in ["📝 Генератор карточек", "📝 Тапсырма карточкаларын жасау"]:
     st.title(menu_choice)
     st.info(t["template_info"])
+    
+    # КНОПКА СКАЧИВАНИЯ ШАБЛОНА
+    template_bytes = generate_excel_template()
+    st.download_button(
+        label=t["download_template"],
+        data=template_bytes,
+        file_name="BilimAI_Template.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
     st.divider()
 
     source_type = st.radio(t["source"], t["source_options"], horizontal=True)
@@ -424,7 +448,7 @@ if menu_choice in ["📝 Генератор карточек", "📝 Тапсы�
                 except Exception as e: st.error(f"Произошла ошибка при обработке данных: {e}")
 
 # ==========================================
-# МОДУЛЬ 2: AI-ГЕНЕРАТОР КТП (ПО ГОС. СТАНДАРТУ)
+# МОДУЛЬ 2: AI-ГЕНЕРАТОР КТП 
 # ==========================================
 elif menu_choice in ["📅 AI-Генератор КТП", "📅 КТП AI-Генераторы"]:
     st.title(menu_choice)
@@ -471,7 +495,6 @@ elif menu_choice in ["📅 AI-Генератор КТП", "📅 КТП AI-Ген
                     section_doc.orientation = WD_ORIENT.LANDSCAPE
                     section_doc.page_width, section_doc.page_height = section_doc.page_height, section_doc.page_width
 
-                    # Формирование правильной шапки документа
                     title = doc.add_paragraph()
                     title.alignment = WD_ALIGN_PARAGRAPH.CENTER
                     run1 = title.add_run(f"КАЛЕНДАРНО-ТЕМАТИЧЕСКОЕ ПЛАНИРОВАНИЕ\nПО {subject.upper()} ДЛЯ {grade} КЛАССА\n")
@@ -496,7 +519,6 @@ elif menu_choice in ["📅 AI-Генератор КТП", "📅 КТП AI-Ген
                     for item in ktp_data:
                         q = str(item.get("quarter", ""))
                         if q != current_quarter and q.strip():
-                            # Вставляем строку с названием четверти (объединенная ячейка)
                             row_q = table.add_row()
                             merged_cell = row_q.cells[0].merge(row_q.cells[-1])
                             merged_cell.text = f"{q} четверть"
@@ -510,10 +532,9 @@ elif menu_choice in ["📅 AI-Генератор КТП", "📅 КТП AI-Ген
                         row[2].text = str(item.get("topic", ""))
                         row[3].text = str(item.get("targets", ""))
                         row[4].text = "1"
-                        row[5].text = "" # Дата пустая для заполнения
-                        row[6].text = "" # Примечание пустое
+                        row[5].text = ""
+                        row[6].text = ""
                     
-                    # Устанавливаем ширину колонок
                     for row in table.rows:
                         for idx, width in enumerate(widths):
                             row.cells[idx].width = Inches(width)
@@ -525,7 +546,7 @@ elif menu_choice in ["📅 AI-Генератор КТП", "📅 КТП AI-Ген
             except Exception as e: st.error(f"Ошибка парсинга или ИИ: {e}")
 
 # ==========================================
-# МОДУЛЬ 3: AI-КОНСТРУКТОР КСП (ПО ГОС. СТАНДАРТУ)
+# МОДУЛЬ 3: AI-КОНСТРУКТОР КСП 
 # ==========================================
 elif menu_choice in ["📋 AI-Конструктор КСП", "📋 ҚМЖ (КСП) AI-Конструкторы"]:
     st.title(menu_choice)
@@ -546,13 +567,11 @@ elif menu_choice in ["📋 AI-Конструктор КСП", "📋 ҚМЖ (КС
                 with st.spinner(f"⏳ {t['wait_ksp']}"):
                     genai.configure(api_key=active_key)
                     model = genai.GenerativeModel("gemini-3.6-flash")
-                    prompt = f"{t['ai_lang_prompt']} Создай план урока по предмету {subject_ksp}, тема {topic_ksp}. Верни строго JSON (БЕЗ markdown): {{\"section\":\"Название раздела (например, Искусственный интеллект)\", \"learning_targets\":\"...\", \"lesson_targets\":\"Смогут...\", \"stages\":[{{\"time\":\"Начало урока 0-10 мин\", \"teacher\":\"...\", \"student\":\"...\", \"eval\":\"...\", \"resources\":\"...\"}}]}}"
+                    prompt = f"{t['ai_lang_prompt']} Создай план урока по предмету {subject_ksp}, тема {topic_ksp}. Верни строго JSON (БЕЗ markdown): {{\"section\":\"Название раздела\", \"learning_targets\":\"...\", \"lesson_targets\":\"Смогут...\", \"stages\":[{{\"time\":\"Начало урока 0-10 мин\", \"teacher\":\"...\", \"student\":\"...\", \"eval\":\"...\", \"resources\":\"...\"}}]}}"
                     res = model.generate_content(prompt)
                     ksp_data = clean_json_response(res.text)
 
                     doc = Document()
-                    
-                    # Шапка документа
                     doc.add_paragraph("_______________________________________________________________________").alignment = WD_ALIGN_PARAGRAPH.CENTER
                     p_org = doc.add_paragraph("(наименование организации образования)")
                     p_org.alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -566,32 +585,24 @@ elif menu_choice in ["📋 AI-Конструктор КСП", "📋 ҚМЖ (КС
                     p_topic.runs[0].bold = True
                     p_topic.alignment = WD_ALIGN_PARAGRAPH.CENTER
 
-                    # Первая таблица (информация)
                     t1 = doc.add_table(rows=6, cols=2)
                     t1.style = 'Table Grid'
                     
-                    # Заполняем ячейки
                     t1.rows[0].cells[0].text = "Раздел"
                     t1.rows[0].cells[1].text = ksp_data.get("section", "")
-                    
-                    t1.rows[1].cells[0].text = "Фамилия, имя, отчество (при его наличии) педагога"
+                    t1.rows[1].cells[0].text = "Фамилия, имя, отчество педагога"
                     t1.rows[1].cells[1].text = teacher_name
-                    
                     t1.rows[2].cells[0].text = "Дата"
                     t1.rows[2].cells[1].text = ""
-                    
                     t1.rows[3].cells[0].text = f"Класс: {grade_ksp}"
                     t1.rows[3].cells[1].text = "Количество присутствующих: \nКоличество отсутствующих: "
-                    
-                    t1.rows[4].cells[0].text = "Цели обучения в соответствии\nс учебной программой"
+                    t1.rows[4].cells[0].text = "Цели обучения в соответствии с учебной программой"
                     t1.rows[4].cells[1].text = ksp_data.get("learning_targets", target_ksp)
-                    
                     t1.rows[5].cells[0].text = "Цели урока"
                     t1.rows[5].cells[1].text = ksp_data.get("lesson_targets", "")
 
                     doc.add_paragraph("\nХод урока")
                     
-                    # Вторая таблица (этапы)
                     t2 = doc.add_table(rows=1, cols=5)
                     t2.style = 'Table Grid'
                     headers2 = ["Этап урока", "Действия педагога", "Действия ученика", "Оценивание", "Ресурсы"]
