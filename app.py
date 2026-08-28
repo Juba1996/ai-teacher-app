@@ -546,7 +546,7 @@ elif menu_choice in ["📅 AI-Генератор КТП", "📅 КТП AI-Ген
             except Exception as e: st.error(f"Ошибка парсинга или ИИ: {e}")
 
 # ==========================================
-# МОДУЛЬ 3: AI-КОНСТРУКТОР КСП 
+# МОДУЛЬ 3: AI-КОНСТРУКТОР КСП (ПО ГОС. СТАНДАРТУ)
 # ==========================================
 elif menu_choice in ["📋 AI-Конструктор КСП", "📋 ҚМЖ (КСП) AI-Конструкторы"]:
     st.title(menu_choice)
@@ -567,9 +567,15 @@ elif menu_choice in ["📋 AI-Конструктор КСП", "📋 ҚМЖ (КС
                 with st.spinner(f"⏳ {t['wait_ksp']}"):
                     genai.configure(api_key=active_key)
                     model = genai.GenerativeModel("gemini-3.6-flash")
-                    prompt = f"{t['ai_lang_prompt']} Создай план урока по предмету {subject_ksp}, тема {topic_ksp}. Верни строго JSON (БЕЗ markdown): {{\"section\":\"Название раздела\", \"learning_targets\":\"...\", \"lesson_targets\":\"Смогут...\", \"stages\":[{{\"time\":\"Начало урока 0-10 мин\", \"teacher\":\"...\", \"student\":\"...\", \"eval\":\"...\", \"resources\":\"...\"}}]}}"
+                    prompt = f"{t['ai_lang_prompt']} Создай план урока по предмету {subject_ksp}, тема {topic_ksp}. Верни строго JSON объект (БЕЗ markdown): {{\"section\":\"Название раздела\", \"learning_targets\":\"...\", \"lesson_targets\":\"Смогут...\", \"stages\":[{{\"time\":\"Начало урока 0-10 мин\", \"teacher\":\"...\", \"student\":\"...\", \"eval\":\"...\", \"resources\":\"...\"}}]}}"
                     res = model.generate_content(prompt)
                     ksp_data = clean_json_response(res.text)
+
+                    # 🛡️ ЗАЩИТА ОТ ОШИБКИ 'list' object has no attribute 'get'
+                    if isinstance(ksp_data, list):
+                        ksp_data = ksp_data[0] if len(ksp_data) > 0 else {}
+                    if not isinstance(ksp_data, dict):
+                        ksp_data = {}
 
                     doc = Document()
                     doc.add_paragraph("_______________________________________________________________________").alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -589,7 +595,7 @@ elif menu_choice in ["📋 AI-Конструктор КСП", "📋 ҚМЖ (КС
                     t1.style = 'Table Grid'
                     
                     t1.rows[0].cells[0].text = "Раздел"
-                    t1.rows[0].cells[1].text = ksp_data.get("section", "")
+                    t1.rows[0].cells[1].text = str(ksp_data.get("section", ""))
                     t1.rows[1].cells[0].text = "Фамилия, имя, отчество педагога"
                     t1.rows[1].cells[1].text = teacher_name
                     t1.rows[2].cells[0].text = "Дата"
@@ -597,9 +603,9 @@ elif menu_choice in ["📋 AI-Конструктор КСП", "📋 ҚМЖ (КС
                     t1.rows[3].cells[0].text = f"Класс: {grade_ksp}"
                     t1.rows[3].cells[1].text = "Количество присутствующих: \nКоличество отсутствующих: "
                     t1.rows[4].cells[0].text = "Цели обучения в соответствии с учебной программой"
-                    t1.rows[4].cells[1].text = ksp_data.get("learning_targets", target_ksp)
+                    t1.rows[4].cells[1].text = str(ksp_data.get("learning_targets", target_ksp))
                     t1.rows[5].cells[0].text = "Цели урока"
-                    t1.rows[5].cells[1].text = ksp_data.get("lesson_targets", "")
+                    t1.rows[5].cells[1].text = str(ksp_data.get("lesson_targets", ""))
 
                     doc.add_paragraph("\nХод урока")
                     
@@ -614,13 +620,16 @@ elif menu_choice in ["📋 AI-Конструктор КСП", "📋 ҚМЖ (КС
                         hdr_cells2[i].paragraphs[0].runs[0].bold = True
                         hdr_cells2[i].paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
 
-                    for stg in ksp_data.get("stages", []):
-                        row = t2.add_row().cells
-                        row[0].text = str(stg.get("time", ""))
-                        row[1].text = str(stg.get("teacher", ""))
-                        row[2].text = str(stg.get("student", ""))
-                        row[3].text = str(stg.get("eval", ""))
-                        row[4].text = str(stg.get("resources", ""))
+                    stages = ksp_data.get("stages", [])
+                    if isinstance(stages, list):
+                        for stg in stages:
+                            if isinstance(stg, dict):
+                                row = t2.add_row().cells
+                                row[0].text = str(stg.get("time", ""))
+                                row[1].text = str(stg.get("teacher", ""))
+                                row[2].text = str(stg.get("student", ""))
+                                row[3].text = str(stg.get("eval", ""))
+                                row[4].text = str(stg.get("resources", ""))
                         
                     for row in t2.rows:
                         for idx, width in enumerate(widths2):
